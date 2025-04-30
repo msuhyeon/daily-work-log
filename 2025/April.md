@@ -119,3 +119,21 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>
 ```
 이렇게 `formSchema`로 타입 자동 생성이 가능함 👉 입력값 처리 로직을 더 깔끔&안전 하게 만들 수 있음
+
+#### 회원가입 폼 예시
+```tsx
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const formSchema = z.object({
+  id: z.string().min(3, {
+    message: "ID character limit is 16 characters."
+  }),
+  .....
+  email: z
+  .string()
+  .regex(emailPattern, {
+    message: "Please enter a valid email address.",
+  }),
+})
+```
+이메일 같은 경우 정규 패턴을 벗어나는 경우 경고 문을 띄워주려면 이런 식으로 사용하면 됨
