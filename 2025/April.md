@@ -99,4 +99,23 @@ const [password, setPassword] = useState("");
 기존 프로젝트는 Vuetify 기반으로 구성되어 있어, 기능과 스타일이 통합된 컴포넌트를 일관되게 사용할 수 있었다. React로 마이그레이션하면서 동일한 구조를 유지하기 위해, 기능은 Radix 기반으로 제공되고 스타일은 Tailwind로 구성된 `shadcn/ui`를 도입하려고 한다.
 
 > `shadcn/ui`는 Radix UI를 기반으로 접근성과 기능이 보장된 컴포넌트를 제공하며 TailwindCSS로 기본적인 스타일이 적용되어있다. <br/>Vuetify와는 다르게 컴포넌트가 프로젝트에 복사가 되므로 **커스터마이징이 유연**하다고 하니 좀 더 쓰기 편할 것 같다.
+<br/>
+<br/>
 
+# Zod 도입하기
+- zod는 **스키마 선언 및 유효성 검사 라이브러리**로, 입력값이 올바른지 검사해주는 도구로 주로 **폼 검증**이나 **API 응답 검증**에 많이 사용됨
+- 이번 프로젝트에서는 `shadcn/ui`의 `<Form />` 컴포넌트가 `react-hook-form`과 통합되어 있고, `zod` 기반의 스키마 검증을 권장하고 있어 이를 따라 도입
+
+### Zod를 사용하는 이유  
+타입 기반의 스키마 선언을 통해 `폼 유효성 검증`과 `TypeScript 타입 정의`를 **하나로 통합**할 수 있어서 검증 로직의 **재사용성과 가독성이 크게 향상**
+```ts
+const formSchema = z.object({
+ username: z.string().min(2),
+})
+```
+- `.string()` 👉 타입
+- `.min(2)` 👉 검증 조건
+```ts
+type FormData = z.infer<typeof formSchema>
+```
+이렇게 `formSchema`로 타입 자동 생성이 가능함 👉 입력값 처리 로직을 더 깔끔&안전 하게 만들 수 있음
