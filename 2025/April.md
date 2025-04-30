@@ -88,4 +88,15 @@ const [password, setPassword] = useState("");
 - ref를 이용해서 DOM 요소 자체에 접근해서 값을 읽어옴
   1. input에 텍스트 입력
   2. input 안에 값 저장 (브라우저 기본 동작)
-  3. 필요 시 `ref.current.value`로 읽어옴 👉 리렌더링 X 
+  3. 필요 시 `ref.current.value`로 읽어옴 👉 리렌더링 X
+
+<br/>
+<br/>
+
+ 
+# shadcn/ui 도입하기
+
+기존 프로젝트는 Vuetify 기반으로 구성되어 있어, 기능과 스타일이 통합된 컴포넌트를 일관되게 사용할 수 있었다. React로 마이그레이션하면서 동일한 구조를 유지하기 위해, 기능은 Radix 기반으로 제공되고 스타일은 Tailwind로 구성된 `shadcn/ui`를 도입하려고 한다.
+
+> `shadcn/ui`는 Radix UI를 기반으로 접근성과 기능이 보장된 컴포넌트를 제공하며 TailwindCSS로 기본적인 스타일이 적용되어있다. <br/>Vuetify와는 다르게 컴포넌트가 프로젝트에 복사가 되므로 **커스터마이징이 유연**하다고 하니 좀 더 쓰기 편할 것 같다.
+
