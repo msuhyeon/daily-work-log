@@ -181,16 +181,15 @@ const formSchema = z.object({
 
 보통은 입력 필드가 여러개 일 경우엔 코드가 길어지니 `<FormField />`를 컴포넌트로 만들어 사용한다.
 
-2. Input 별로 `FormField` 적용
+2. 코드가 길어지니 반복되는건 FormInput 컴포넌트로 분리하여 Input 별로 `FormField` 적용
 
 ```tsx
 // components/FormInput.tsx
-
 const FormInput = () => {
   return (
    <FormField
     control={control}
-   name={name}
+    name={name}
     render={({ render }) => (
      <FormItem>
       <FormLabel>{label}</FormLabel>
@@ -214,7 +213,6 @@ const FormInput = () => {
     <FormInput control={form.control} name="passwordCheck" label="Confirm Password" type="password" />
     <FormInput control={form.control} name="name" label="Name" />
     <FormInput control={form.control} name="email" label="Email" placeholder="example@email.com" />
-    <Button type="submit" className="w-full">회원가입</Button>
   </form>
 </Form>
 ```
