@@ -104,7 +104,7 @@ const [password, setPassword] = useState("");
 
 # Zod 도입하기
 - zod는 **스키마 선언 및 유효성 검사 라이브러리**로, 입력값이 올바른지 검사해주는 도구로 주로 **폼 검증**이나 **API 응답 검증**에 많이 사용됨
-- 이번 프로젝트에서는 `shadcn/ui`의 `<Form />` 컴포넌트가 `react-hook-form`과 통합되어 있고, `zod` 기반의 스키마 검증을 권장하고 있어 이를 따라 도입
+- `shadcn/ui`의 `<Form />` 컴포넌트가 `react-hook-form`과 통합되어 있고, `zod` 기반의 스키마 검증을 권장하고 있어 이를 따라 도입
 
 ### Zod를 사용하는 이유  
 타입 기반의 스키마 선언을 통해 `폼 유효성 검증`과 `TypeScript 타입 정의`를 **하나로 통합**할 수 있어서 검증 로직의 **재사용성과 가독성이 크게 향상**
@@ -137,3 +137,84 @@ const formSchema = z.object({
 })
 ```
 이메일 같은 경우 정규 패턴을 벗어나는 경우 경고 문을 띄워주려면 이런 식으로 사용하면 됨
+
+### Form에 Input이 여러개 인 경우
+1. 잘못 된 예시
+```tsx
+ <Form {...form}>
+  <form
+    onSubmit={form.handleSubmit(onSubmit)}
+  >
+    <FormField
+      control={form.control}
+      name="id"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel />
+          <FormControl>
+            <Input
+              {...field}
+              type="text"
+              placeholder="ID"
+              className="w-64"
+            />
+            <Input
+              {...field}
+              type="password"
+              placeholder="Password"
+            />
+          </FormControl>
+          <FormDescription />
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  </form>
+</Form> 
+```
+`<FormField>`는 입력 필드 마다 개별로 쓰는게 `shadcn/ui`+`react-hook-form`의 기본 구조이며 **에러 메시지**, **포커스**, **상태 추적**이 가능!!
+- `name`: 필드 이름을 `formSchema`와 매핑하여 연결
+- `control`: `form.control`을 통해 상태 연결
+- `render={({ field }) => (...)}`: `Input`, `Select`, `Textarea` 등에 field props 연결
+- `FormMessage`: 에러 메시지 연동
+- `FormControl`: 스타일링 & 접근성 컨텍스트 제공
+
+보통은 입력 필드가 여러개 일 경우엔 코드가 길어지니 `<FormField />`를 컴포넌트로 만들어 사용한다.
+
+2. Input 별로 `FormField` 적용
+
+```tsx
+// components/FormInput.tsx
+
+const FormInput = () => {
+  return (
+   <FormField
+    control={control}
+   name={name}
+    render={({ render }) => (
+     <FormItem>
+      <FormLabel>{label}</FormLabel>
+       <FormControl>
+         <Input {...field} type={type} placeholder={placeholder} />
+       </FormControl>
+     </FormItem>
+    )}
+  >
+ )
+}
+```
+
+
+```tsx
+// components/Login.tsx
+<Form {...form}>
+  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <FormInput control={form.control} name="id" label="ID" placeholder="아이디 입력" />
+    <FormInput control={form.control} name="password" label="Password" type="password" />
+    <FormInput control={form.control} name="passwordCheck" label="Confirm Password" type="password" />
+    <FormInput control={form.control} name="name" label="Name" />
+    <FormInput control={form.control} name="email" label="Email" placeholder="example@email.com" />
+    <Button type="submit" className="w-full">회원가입</Button>
+  </form>
+</Form>
+```
