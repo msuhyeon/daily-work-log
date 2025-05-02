@@ -251,3 +251,7 @@ type SignUpForm = {
  placeholder="아이디를 입력하세요."
 />
 ```
+- `<FormInput<SignUpForm> ... />`처럼 부모가 **SignUpForm**이라는 타입을 넘겨주었으니
+- 자식 컴포넌트에서 타입(<SignUpForm>)을 받아서 **props에 활용**해야함
+
+
