@@ -216,3 +216,38 @@ const FormInput = () => {
   </form>
 </Form>
 ```
+
+자 이렇게 만들었는데 아까 `zod`로 만든 폰 검증 스키마를 타입으로 추출해서 `<FormInput/>`에 넘길 수 있다.
+
+```tsx
+const formSchema = z.object({
+  id: z.string().min(3, {
+    message: "ID character limit is 16 characters.",
+  }),
+  password: z.string(),
+  passwordCheck: z.string(),
+  ........
+});
+
+// 이렇게 타입을 뽑아내면
+type SignupForm = z.infer<typeof formSchema>;
+
+// SignupForm이라는 타입은 이런식으로 만들어진다.
+type SignUpForm = {
+  id: string;
+  password: string;
+  passwordCheck: string;
+  .....
+}
+```
+`name="abc"`같은 스키마에 존재하지 않는 값을 넣으면 타입스크립트에서 막음으로써 **폼 로직 & 타입**을 **일치** 시킬 수 있음
+
+이런 식으로 사용 하면 됨
+```tsx
+<FormInput<SignUpForm>
+ control={form.control}
+ name="id"
+ label="ID"
+ placeholder="아이디를 입력하세요."
+/>
+```
