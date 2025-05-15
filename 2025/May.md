@@ -74,3 +74,40 @@ Next.js의 `pages/index.tsx`는 사용자가 웹사이트에 처음 접근했을
 - 홈페이지, 대시보드, 랜딩 페이지 등 초기 화면 구성
 - 사용자에게 보여줄 메인 콘텐츠 렌더링
 - `getStaticProps`, `getServerSideProps`를 통한 데이터 페칭 가능
+
+
+## 다이나믹 라우팅
+URL의 일부를 변수처럼 받아서 여러개의 페이지를 하나의 파일로 처리하는 기능
+
+#### 다이나믹 라우팅이 쓰이는 경우
+- 상품 상세, 사용자 프로필 등 **ID나 슬러그(slug)** 값에 따라 보여줄 내용이 달라질 때
+- `/product/1`, `/product/abc` 등을 각각 파일로 만들 수 없으니 `[id]` 같은 변수 파일 하나로 처리
+
+#### Page Router 에서의 다이나믹 라우팅
+```text
+pages/
+└─ products/
+   └─ [id].tsx      // /products/123, /products/latte 등
+```
+- `[id]` 부분이 동적 경로 파라미터
+- URL`/product/123123` -> `params.id === '123123'` 
+
+```tsx
+import { useRouter } from 'next/router'
+
+export default function ProductPage() {
+  const { query: { id } } = useRouter()
+  return <p>상품 ID: {id}</p>
+}
+```
+
+1. `getaticPaths`:
+  - **다이나믹 라우트**(`pages/products/[id].tsx`)에서 어떤 `id`값에 대해 **정적 페이지(HTML)를 미리 생성**할지 Next.js에 알려주는 역할
+
+
+
+
+
+
+
+
