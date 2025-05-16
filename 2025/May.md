@@ -135,8 +135,8 @@ export default function ProductPage() {
 ```
 1. `getStaticProps`: 정적 사이트 생성
   - 경로에 들어갈 데이터를 가져옴
-   - Next.js는 `getStaticProps`로 부터 반환된 props를 사용하여 이 페이지를 **빌드 타임에 미리 렌더링**함
-   - 정적 생성 흐름
+  - Next.js는 `getStaticProps`로 부터 반환된 props를 사용하여 이 페이지를 **빌드 타임에 미리 렌더링**함
+  - 정적 생성 흐름
      1. `next build` 명렁어 실행
      2. `getStaticProps()` 호출
      3. `getStaticProps()`에서 API 또는 DB에 직접 요청보냄
@@ -159,25 +159,24 @@ export default function ProductPage() {
     
 2. `getStaticPaths`:
 페이지에 동적 라우트 존재 + `getStaticProps`를 사용하는 경우 **정적으로 생성할 경로 목록을 정의**해야함
-  - **동적 경로를 사용하는 페이지**(`pages/products/[id].tsx`)에서 `getStaticPAths`(정적 사이트 생성)이라는 함수를 export
-  - Next.js는 `getStaticPaths`에 지정된 모든 경로를 정적으로 미리 렌더링
-  
+- 어떤 동적 경로들을 미리 만들지 지정
+- **동적 경로를 사용하는 페이지**(`pages/products/[id].tsx`)에서 `getStaticPAths`(정적 사이트 생성)이라는 함수를 export
+- Next.js는 `getStaticPaths`에 지정된 모든 경로를 정적으로 미리 렌더링
+- [`fallback 정리](####fallback)
   ```tsx
-  export const getStaticPaths = (async () => {
+  export const getStaticPaths = async () => {
     return {
+      // 정적으로 생성할 경로 목록
+      // 파일 명이 `[id].tsx`라면 `params: {id: 'XXX'}` 형태로
       paths: [
-        {
-          params: {
-            name: 'next.js',
-          },
-        },
+        { params: { id: '1' } },
+        { params: { id: '2' } }
       ],
-      fallback: true, // false 또는 "blocking"
-    }
-  })
-  ```
 
-<br/>
+      fallback: false
+    };
+  };
+  ```
 
 #### 정적 생성
 1. 데이터가 자주 안바뀜
@@ -214,5 +213,34 @@ export async function getStaticProps() {
 }
 ```
 
+#### fallback
+`getStaticPaths`의 리턴 값 fallback은 세가지 방식으로 리턴 할 수 있다.
+1. `fallback: false`
+  - paths에 없으면 404로 보낸다
+2. `fallback: true`
+  - 먼저 로딩 UI를 보여주고 서버에서 HTML을 생성
+  - 비어있는 기본 페이지를 먼저 보여주고 클라이언트 사이드에서 JS가 로딩되면서 데이터를 불러와서 화면이 렌더링
+  - 첫 사용자에게 빈 화면+로딩 스피너가 보이므로 UX 좋지 못함
+  - SEO 관점에서 불리함
+  ```tsx
+  import { useRouter } from 'next/router';
+
+  export default function Product({ product }) {
+    const router = useRouter();
+  
+    if (router.isFallback) {
+      return <p>로딩 중...</p>; // 첫 요청자는 이걸 보게됨
+    }
+  
+    return <div>{product.name}</div>;
+  }
+
+  ```
+3. `fallback: blocking`
+  - 서버에서 HTML을 생성하고 바로 응답
+  - 생성된 HTML은 **빌드타임 SSG** 처럼 `.next`에 저장되고 캐싱됨
+  - 이후 요청자들은 정적으로 저장된 HTML 그대로 받아감 (SSG와 동일)
+  - 첫 진입부터 완성된 컨텐츠의 HTML을 받음 -> UX 부드럽고 자연스러움
+  - 컨텐츠 포함된 HTML로 응답되므로 SEO 유리
 
 
