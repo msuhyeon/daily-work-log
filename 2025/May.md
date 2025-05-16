@@ -178,7 +178,7 @@ export default function ProductPage() {
   };
   ```
 
-#### 정적 생성
+### 정적 생성
 1. 데이터가 자주 안바뀜
     - 블로그 글, 문서 페이지 처럼 **배포할 때 한번만 생성**하면 되는 컨텐츠 
 2. 빌드 타임에 데이터 확보 가능
@@ -213,11 +213,11 @@ export async function getStaticProps() {
 }
 ```
 
-#### fallback
+### fallback
 `getStaticPaths`의 리턴 값 fallback은 세가지 방식으로 리턴 할 수 있다.
-1. `fallback: false`
+1. **fallback: false**
   - paths에 없으면 404로 보낸다
-2. `fallback: true`
+2. **fallback: true**
   - 먼저 로딩 UI를 보여주고 서버에서 HTML을 생성
   - 비어있는 기본 페이지를 먼저 보여주고 클라이언트 사이드에서 JS가 로딩되면서 데이터를 불러와서 화면이 렌더링
   - 첫 사용자에게 빈 화면+로딩 스피너가 보이므로 UX 좋지 못함
@@ -236,7 +236,7 @@ export async function getStaticProps() {
   }
 
   ```
-3. `fallback: blocking`
+3. **fallback: blocking**
   - 서버에서 HTML을 생성하고 바로 응답
   - 생성된 HTML은 **빌드타임 SSG** 처럼 `.next`에 저장되고 캐싱됨
   - 이후 요청자들은 정적으로 저장된 HTML 그대로 받아감 (SSG와 동일)
