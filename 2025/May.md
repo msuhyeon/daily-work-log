@@ -103,7 +103,7 @@ Next.js 기반 프론트엔드 개발에서 화면을 구성하는 방식은 크
 
 ### 서버에서 데이터를 미리 가져와 렌더링
 - 서버에서 데이터를 `fetch`해서 `props`로 넘김
-- `getStaticPRops`, `getServerSideProps`
+- `getStaticProps`, `getServerSideProps`
 - 렌더링 시점: 요청 때 마다(SSR)
 
 
@@ -134,6 +134,7 @@ export default function ProductPage() {
 }
 ```
 1. `getStaticProps`: 정적 사이트 생성
+  - 경로에 들어갈 데이터를 가져옴
    - Next.js는 `getStaticProps`로 부터 반환된 props를 사용하여 이 페이지를 **빌드 타임에 미리 렌더링**함
    - 정적 생성 흐름
      1. `next build` 명렁어 실행
@@ -149,6 +150,9 @@ export default function ProductPage() {
     
       return {
         props: { post }, // 이 post는 빌드 타임에 받아와서 HTML에 들어감
+        revalidate: 60, // ISR용. 60초 후 백그라운드에서 새로 생성
+        notFound: false, // true일 경우 404 페이지로
+        redirect: { destination: '/login', permanent: false } // 리다이렉트
       };
     }
     ```
