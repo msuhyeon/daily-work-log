@@ -75,6 +75,7 @@ Next.js의 `pages/index.tsx`는 사용자가 웹사이트에 처음 접근했을
 - 사용자에게 보여줄 메인 콘텐츠 렌더링
 - `getStaticProps`, `getServerSideProps`를 통한 데이터 페칭 가능
 
+<br/>
 
 ## 다이나믹 라우팅
 URL의 일부를 변수처럼 받아서 여러개의 페이지를 하나의 파일로 처리하는 기능
@@ -100,14 +101,82 @@ export default function ProductPage() {
   return <p>상품 ID: {id}</p>
 }
 ```
+1. `getStaticProps`: 정적 사이트 생성
+   - Next.js는 `getStaticProps`로 부터 반환된 props를 사용하여 이 페이지를 **빌드 타임에 미리 렌더링**함
+   - 정적 생성 흐름
+     1. `next build` 명렁어 실행
+     2. `getStaticProps()` 호출
+     3. `getStaticProps()`에서 API 또는 DB에 직접 요청보냄
+     4. 응답받은 데이터를 HTML로 렌더링 해놓고 파일로 저장해둠
+    
+    ```tsx
+    // getStaticProps는 페이지 파일에서 export 선언만 해두면 Next.js가 자동으로 호출해서 처리함
+    export async function getStaticProps({ params }) {
+      const res = await fetch(`https://api.cafe.com/product/${params.id}`);
+      const post = await res.json();
+    
+      return {
+        props: { post }, // 이 post는 빌드 타임에 받아와서 HTML에 들어감
+      };
+    }
+    ```
+    
+2. `getStaticPaths`:
+페이지에 동적 라우트 존재 + `getStaticProps`를 사용하는 경우 **정적으로 생성할 경로 목록을 정의**해야함
+  - **동적 경로를 사용하는 페이지**(`pages/products/[id].tsx`)에서 `getStaticPAths`(정적 사이트 생성)이라는 함수를 export
+  - Next.js는 `getStaticPaths`에 지정된 모든 경로를 정적으로 미리 렌더링
+  
+  ```tsx
+  export const getStaticPaths = (async () => {
+    return {
+      paths: [
+        {
+          params: {
+            name: 'next.js',
+          },
+        },
+      ],
+      fallback: true, // false 또는 "blocking"
+    }
+  })
+  ```
 
-1. `getaticPaths`:
-  - **다이나믹 라우트**(`pages/products/[id].tsx`)에서 어떤 `id`값에 대해 **정적 페이지(HTML)를 미리 생성**할지 Next.js에 알려주는 역할
+<br/>
 
+#### 정적 생성
+1. 데이터가 자주 안바뀜
+    - 블로그 글, 문서 페이지 처럼 **배포할 때 한번만 생성**하면 되는 컨텐츠 
+2. 빌드 타임에 데이터 확보 가능
+    - API, DB에서 데이터를 미리 가져올 수 있는 경우
+3. 사용자 마다 다른 데이터를 노출하지 않음
+    - 로그인 여부, 사용자 ID 등에 따라 콘텐츠가 달라지지 않는 경우
 
+예를 들어:
+- 정적인 소개 페이지
+- 블로그 포스트 상세 페이지
+- 제품 상세 페이지(실시간 재고 수량 표시X 경우)
 
+> 데이터가 정적이고 자주 안바뀐다면 정적 생성이 최적화할 수 있는 방법이다.
 
+ISR까지 엮어서 정적으로 페이지를 생성하되, 일정 주기로 갱신 하는 방법을 쓴다.
+이때 `revalidate` prop을 `getSTaticProps`에 추가하면 된다.
 
+```tsx
+export async function getStaticProps() {
+  const res = await fetch('https://.../posts')
+  const posts = await res.json()
+ 
+  return {
+    props: {
+      posts,
+    },
+    // Next.js가 페이지 재생성을 시도:
+    // 요청이 들어올 때
+    // 최대 10초마다 한 번씩
+    revalidate: 10, // 초 단위
+  }
+}
+```
 
 
 
