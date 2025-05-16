@@ -162,7 +162,7 @@ export default function ProductPage() {
 - 어떤 동적 경로들을 미리 만들지 지정
 - **동적 경로를 사용하는 페이지**(`pages/products/[id].tsx`)에서 `getStaticPAths`(정적 사이트 생성)이라는 함수를 export
 - Next.js는 `getStaticPaths`에 지정된 모든 경로를 정적으로 미리 렌더링
-- [`fallback 정리](###fallback)
+- [fallback 정리](###fallback)
   ```tsx
   export const getStaticPaths = async () => {
     return {
