@@ -213,8 +213,32 @@ export async function getStaticProps() {
 }
 ```
 
+### paths
+- `getStaticPaths`함우 내에서 반환되는 `paths`배열은 반드시 **빌드 타임에 생성할 페이지 경로 목록** 정의
+- 배열 내 각 항목은 `params` 객체를 포함해야하며, 해당 객체의 키는 **파일 시스템 기반 라우팅에서 사용하는 파라미터명과 일치**해야함
+- paths 배열에서 각각의 params 값은 페이지 이름에 있는 파라미터와 일치해야함
+  - pages/users/[userId].js: **params객체로 userId 키 값을 가지고있어야함**
+    - ```js
+      { params: { userId: '123' } }
+      ```
+  - pages/[...slug](catch-all라우트): **params 객체는 slug 배열을 가지고있어야함**
+    - ```js
+      { params: { slug: ['section', 'article'] } }
+      ```
+  - pages/[[...slug]](optional catch-all): **null, [], undefined, false를 넣어주면 루트 라우트를 렌더링**
+    - ```js
+      // 루트 페이지
+      { params: { slug: [] } }
+      
+      // 하위 경로
+      { params: { slug: ['section'] } }
+      ```
+> **fallback** 옵션을 통해 paths 외의 경로 요청 시 처리 방식(blocking, true, false)을 결정할 수 있음.
+
 ### fallback
 `getStaticPaths`의 리턴 값 fallback은 세가지 방식으로 리턴 할 수 있다.
+> 에러 발생 시 원래 기능을 대체하는 기능
+
 1. **fallback: false**
   - paths에 없으면 404로 보낸다
 2. **fallback: true**
