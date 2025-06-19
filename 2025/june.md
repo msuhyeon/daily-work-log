@@ -71,3 +71,29 @@
 4. **적정성**: 현재 프로젝트 요구사항에 최적화된 기능 세트 제공
 
 NextAuth.js는 더 큰 규모나 복잡한 요구사항을 가진 프로젝트에서는 훌륭한 선택이 될 수 있으나, **현재 프로젝트의 맥락에서는 불필요한 복잡도를 추가할 위험**이 있다고 판단했다.
+
+
+# PostgreSQL 배열 쿼리 문법 정리
+개발 중 Supabase(PostgreSQL)에서 배열 타입 컬럼 쿼리가 필요했는데, PostgreSQL을 처음 다뤄서 문법이 익숙하지 않아 정리해둔다.
+
+### PostgreSQL과 Javascript 배열 문법 차이
+```js
+// JavaScript
+[1,2,3]
+
+// PostgreSQL: 중괄호 사용  
+{1,2,3}  
+```
+### Supabase 배열 쿼리 패턴
+```js
+// 정확한 배열 매칭
+.eq('level', `{${level}}`)
+
+// 배열 포함 여부
+.contains('level', [level])
+.filter('level', 'cs', `{${level}}`)
+
+// 복합 조건 (최대값 제한)
+.filter('level', 'cs', `{${level}}`)
+.not('level', 'cs', `{${level + 1}}`)
+```
