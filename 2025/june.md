@@ -149,5 +149,5 @@ LANGUAGE javascript -- JavaScript로 작성
 ### Client 에서 RPC 호출 방법
 ```js
 const { data: allWords, error } = await supabase
-  .rpc('get_words_by_level', { level: '3', count });
+  .rpc('get_random_words', { level: '3', count });
 ```
