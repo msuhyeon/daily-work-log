@@ -97,3 +97,57 @@ NextAuth.js는 더 큰 규모나 복잡한 요구사항을 가진 프로젝트�
 .filter('level', 'cs', `{${level}}`)
 .not('level', 'cs', `{${level + 1}}`)
 ```
+
+
+<br/>
+
+# RPC란?
+- **RPC**(Remote Procedure Call)는 Supabase에서 PostgreSQL의 **Stored Procedure**를 **API처럼 호출**할 수 있게 해주는 기능이다.
+- 즉, DB 내부에 정의된 함수(function)를 Supabase 클라이언트에서 `.rpc()` 메서드로 실행할 수 있다.
+
+
+## 특징
+- 데이터베이스에 함수를 만들어서 호출하는 방식
+- SQL 함수를 재사용 가능한 API처럼 사용 가능하기 때문에 네트워크 왕복 횟수를 줄일 수 있음
+- 복잡한 쿼리를 함수로 캡슐화하여 클라이언트에서 쿼리 복잡도를 낮출 수 있음
+- SQL 인젝션 방지
+- 복잡한 쿼리 로직, 트랜잭션, 조건 분기 등을 DB 레벨에서 처리 가능
+- 보안상 민감한 로직을 백엔드(API) 없이도 숨길 수 있음
+
+
+### 사용 예시
+
+#### 1. 함수 생성 (SQL Editor에서)
+
+```sql
+CREATE function get_random_words(level text, count int)
+returns table (                               -- 가상 테이블 구조 정의
+  id uuid,
+  word text,
+  meaning text,
+  pinyin text
+)
+LANGUAGE sql                                 
+AS $$                                         -- 함수의 시작 부분 명시
+  SELECT    id, word, meaning, pinyin
+  FROM      words
+  WHERE     words.level = level
+  ORDER BY  random()
+  LIMIT     count;
+$$;                                           -- 함수 끝
+```
+
+#### language는 어떤 언어로 작성했는지 명시 하는 것 이다.
+- PostgreSQL에서 함수는 여러 언어로 작성할 수 있어 명시해준다.
+```text
+LANGUAGE sql        -- 순수 SQL로 작성
+LANGUAGE plpgsql    -- PL/pgSQL(더 복잡한 로직 가능)
+LANGUAGE python     -- Python으로 작성
+LANGUAGE javascript -- JavaScript로 작성
+```
+
+### Client 에서 RPC 호출 방법
+```js
+const { data: allWords, error } = await supabase
+  .rpc('get_words_by_level', { level: '3', count });
+```
