@@ -151,3 +151,92 @@ LANGUAGE javascript -- JavaScript로 작성
 const { data: allWords, error } = await supabase
   .rpc('get_random_words', { level: '3', count });
 ```
+
+
+<br/>
+
+## Supabase RLS 인증 이슈
+API 라우트에서 Supabase 데이터베이스 쿼리 실행 시 데이터가 존재함에도 불구하고 *빈 값이 리턴*되는 현상 발생
+
+### 원인 분석
+
+#### 1. RLS 보안 정책 충돌
+문제의 핵심은 대상 테이블의 **행 수준 보안(Row Level Security)** 정책이었다.
+
+```sql
+-- 적용된 RLS 정책
+(auth.uid() = user_id)
+```
+이 정책은 인증된 사용자만 본인 소유 데이터에 접근하도록 제한한 것 이다.
+
+#### 2. 클라이언트 구성 오류
+```javascript
+// 문제가 된 클라이언트 설정
+import { supabase } from '@/lib/supabase/client';
+```
+
+1. **서버-클라이언트 컨텍스트 불일치**
+   - API 라우트는 서버 환경에서 실행되어 클라이언트(브라우저)에 저장된 토큰을 직접 가져올 수 없음
+   - 클라이언트용 인스턴스는 인증 컨텍스트를 포함하지 않음
+
+2. **인증 토큰 누락**
+   - 세션 정보(JWT) 없이 쿼리 실행 시도
+   - RLS 정책에서 `auth.uid()`가 null로 평가되어 모든 레코드 접근 차단
+
+3. **클라이언트 세션을 서버 API로 전달하는 구조가 존재하지 않음**
+
+> JWT 인증 플로우를 생각하면 된다.
+> 1. 쿠키에서 JWT 토큰 추출
+> 2. JWT 서명 검증 및 페이로드 디코딩  
+> 3. `auth.uid()`로 사용자 식별자 추출
+> 4. RLS 정책에서 해당 ID로 데이터 접근 권한 검증
+
+### 해결 방안
+
+#### `@supabase/ssr` 패키지를 활용한 세션 인식 가능한 서버 클라이언트 구성
+
+```javascript
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+
+export async function createClient() {
+  const cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Server Component에서 호출 시 무시 (미들웨어에서 세션 관리)
+          }
+        },
+      },
+    }
+  );
+}
+```
+
+#### 아키텍처 개선 포인트
+
+**쿠키 기반 세션 브리지**
+- Next.js `cookies()` API로 서버에서 클라이언트(브라우저) 쿠키를 읽고 인증 정보를 가져옴
+- HTTP-only 쿠키를 통한 안전한 JWT 전송
+
+<!--
+**SSR 환경 호환성**  
+- `@supabase/ssr` 패키지로 서버 사이드 렌더링 환경에서 인증 컨텍스트 유지
+- 하이드레이션 불일치 방지
+
+**세션 동기화 자동화**
+- 클라이언트-서버 간 세션 상태 실시간 동기화
+- 토큰 갱신 및 만료 처리 자동화
+-->
