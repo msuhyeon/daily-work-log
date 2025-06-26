@@ -191,40 +191,6 @@ import { supabase } from '@/lib/supabase/client';
 > 3. `auth.uid()`로 사용자 식별자 추출
 > 4. RLS 정책에서 해당 ID로 데이터 접근 권한 검증
 
-### 해결 방안
-
-#### `@supabase/ssr` 패키지를 활용한 세션 인식 가능한 서버 클라이언트 구성
-
-```javascript
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-
-export async function createClient() {
-  const cookieStore = await cookies();
-  
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Server Component에서 호출 시 무시 (미들웨어에서 세션 관리)
-          }
-        },
-      },
-    }
-  );
-}
-```
-
 #### 아키텍처 개선 포인트
 
 **쿠키 기반 세션 브리지**
@@ -240,3 +206,43 @@ export async function createClient() {
 - 클라이언트-서버 간 세션 상태 실시간 동기화
 - 토큰 갱신 및 만료 처리 자동화
 -->
+
+## @/lib/supabase/client
+- createClient(SUPABASE_URL, SUPABASE_ANON_KEY)로 만든 기본 Supabase 클라이언트
+- **브라우저(클라이언트)** 에서만 사용 가능
+- **인증 정보(세션, 쿠키, 토큰)** 가 자동으로 안 들어 있음
+- 직접 `supabase.auth.getUser()` 호출해서 가져와야 함
+- `createClient`는 브라우저 전용 함수이므로 **Client Component에서만** 사용 가능
+
+## @supabase/ssr의 createServerClient(...)
+- **Server Component / Middleware / API Route** 등 서버 사이드에서 사용
+- 현재 사용자의 인증 정보가 포함된 Supabase 인스턴스를 생성할 때 사용하는 함수
+
+### 흐름
+1. Next.js 서버에서 실행
+2. cookies()를 통해 요청의 쿠키를 수동으로 가져옴
+3. 그걸 createServerClient()에 넘겨줌
+4. Supabase는 쿠키 안에 있는 sb-access-token, sb-refresh-token을 파싱
+5. 세션 정보를 가진 클라이언트 인스턴스를 반환함
+
+```ts
+// 예시
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+
+export const getSupabase = () => {
+  const cookieStore = cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+      },
+    }
+  );
+
+  return supabase;
+};
+```
