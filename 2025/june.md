@@ -246,3 +246,96 @@ export const getSupabase = () => {
   return supabase;
 };
 ```
+
+<br/>
+
+# 역할 기반 접근 제한(RBAC) 구성요소 리팩토링
+
+프론트엔드에서 Role 에 따라 UI가 달라지는 페이지를 개발할 때 각각의 역할마다 별도의 페이지를 만들다 보면 유지보수가 힘들어지고 코드 중복이 심했다. 
+그래서 설정을 기반으로 컴포넌트를 구성해서 문제를 해결하고자 했다.
+
+```
+List (메인 컴포넌트)
+├── Filters (필터 UI)
+├── DataTable (테이블 UI)
+└── Configs (설정 데이터)
+```
+
+### 1. 설정에 기반 렌더링 되게하자
+
+```tsx
+// 역할별로 "설정"만 다르게 하고
+const config = PATCH_CONFIGS[userRole];
+
+// 같은 컴포넌트 재사용
+<DataTable columns={config.columns} />
+<Filters filters={config.filters} />
+```
+
+### 2. 데이터의 흐름은 다음과 같다.
+
+사용자 역할 설정 -> UI 렌더링
+
+- `user` 설정 -> 6개 컬럼 + 2개 필터  
+- `admin` 설정 -> 8개 컬럼 + 3개 필터
+
+
+## 파일 별 역할
+
+### `Configs.ts`
+- 설정 정의
+- 각 역할의 컬럼, 필터 정의
+- 새 역할 추가 시 이 파일만 수정
+-  ```ts
+   export const LIST_CONFIG = {
+      admin: {
+         columns: [
+            { key: 'index', label: 'Index', align: 'center'},
+            { key: 'status', label: '상태', align: 'center'},
+            { key: 'type', label: '구분', align: 'center'},
+            ....
+         ],
+         filters: [
+            {
+               key: 'status',
+               label: '상태',
+               options: [
+                  {value: 'first', label: 'FIRST'},
+                  {value: 'second', label: 'SECOND'},
+               ],
+            },
+         ],
+      },
+      member: { ... },
+   }
+   ```
+
+### `List.tsx`
+- 역할에 맞는 설정 선택
+- 필터링 로직 처리
+- 하위 컴포넌트 조합
+- ```tsx
+  const List = ({userRole}: ListProps) => {
+     const config = LIST_CONFIG[userRole];
+     const filteredData = data.filter((item) => ... )
+
+     return (
+        <Filter filter={config.filters} />
+        <DataTable columns={config.columns} data={filteredData} />
+     ) 
+  }
+  ```
+
+### `Filters.tsx`
+- 검색, 드롭다운 등 제공
+
+### `DataTable.tsx`
+- 데이터 표시
+
+### `어드민/리스트/page.tsx`
+```tsx
+<List userRole="admin" data={data} />
+```
+
+#### 결론 
+역할이 늘어나도 코드의 중복이 없고 설정만 추가하면 되니 확장성 뛰어나다. 명확한 구조 덕분에 유지보수가 편해졌다.
