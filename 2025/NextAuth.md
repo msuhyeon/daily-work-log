@@ -117,6 +117,114 @@ sequenceDiagram
 - 별도의 서비스별 회원가입 프로세스 불필요
 - 신뢰할 수 있는 Provider를 통한 안전한 인증
 
+### NextAuth.ts 설정 파일
+```ts
+// api.auth/[...nextauth]/route.ts
+import NextAuth from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
+import { OAuthConfig } from 'next-auth/providers/oauth';
+
+// 인증 관련 설정을 담는 객체: 로그인 방식, 세션 관리 방법을 정의함
+const authOptions: NextAuthOptions = {
+  debug: true,
+  providers: [ // 어떤 방식으로 로그인 할지 정의: 나의 경우 사내 인증 시스템이므로 custom provider를 정의
+    { 
+      id: 'testid',  // 인증 방식 이름 정의: 코드에서 signIn('testid')로 사용함
+      name: 'SignIn With AuthX',  // 사용자에게 보여질 로그인 버튼의 이름
+      type: 'oauth', // 다른 서비스를 통해서 로그인하겠다는 의미
+      clientId: process.env.AUTH_CLIENT_ID,  // 인증 서비스에서 발급 받은 앱ID로 공개된 정보
+      // cliendSecret은 인증 서버에서 발급 받은 비밀키로 보안정보를 넣는데 나의 경우 인증 방식이 PKCE라서 안보냄
+      issuer: 'OpenID Connect 인증 서버 URL' // 인증 서버의 기본 URL 주소로 구글 이라면: https://accounts.google.com
+      authorization: {
+        url: 'https://api.cadiacinsight.com/v1/authorize',
+        params: {
+          scope: 'openid',
+          response_type: 'code',
+        },
+      },
+      token: {
+        url: 'https://api.cadiacinsight.com/v1/token',
+        params: {
+          grant_type: 'authorization_code',
+        },
+      },
+      userinfo: 'https://api.cadiacinsight.com/v1/userinfo',
+      checks: ['pkce', 'state'],
+      idToken: false,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
+    } as OAuthConfig<any>,
+  ],
+  session: {
+    strategy: 'jwt',
+  },
+  callbacks: {
+    async signIn({ user, account, profile, email, credentials }) {
+      console.log('signIn callback:', { user, account, profile, email, credentials });
+      return true;
+    },
+    async jwt({ token, account, profile, user }) {
+      console.log('jwt callback:', { token, account, profile, user });
+      if (account) {
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+      }
+      if (profile) {
+        token.sub = profile.sub;
+        token.name = profile.name;
+        token.email = profile.email;
+        token.picture = profile.picture;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      console.log('session callback:', { session, token });
+      if (token) {
+        session.user = {
+          name: token.name,
+          email: token.email,
+          image: token.picture,
+        };
+      }
+      return session;
+    },
+  },
+  events: {
+    async signIn(message) {
+      console.log('signIn event:', message);
+    },
+    async signOut(message) {
+      console.log('signOut event:', message);
+    },
+    async createUser(message) {
+      console.log('createUser event:', message);
+    },
+    async updateUser(message) {
+      console.log('updateUser event:', message);
+    },
+    async linkAccount(message) {
+      console.log('linkAccount event:', message);
+    },
+    async session(message) {
+      console.log('session event:', message);
+    },
+  },
+  pages: {
+    signIn: '/login',
+  },
+};
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+```
+
 
 *참고*
 - [NextAuth.js 공식 문서](https://next-auth.js.org/)
