@@ -117,113 +117,87 @@ sequenceDiagram
 - 별도의 서비스별 회원가입 프로세스 불필요
 - 신뢰할 수 있는 Provider를 통한 안전한 인증
 
-### NextAuth.ts 설정 파일
+# NextAuth.js 설정 파일
 ```ts
 // api.auth/[...nextauth]/route.ts
-import NextAuth from 'next-auth';
-import type { NextAuthOptions } from 'next-auth';
-import { OAuthConfig } from 'next-auth/providers/oauth';
+import NextAuth from 'next-auth';   
+import type { NextAuthOptions } from 'next-auth'; 
+import { jwtDecode } from 'jwt-decode';
 
 // 인증 관련 설정을 담는 객체: 로그인 방식, 세션 관리 방법을 정의함
 const authOptions: NextAuthOptions = {
-  debug: true,
-  providers: [ // 어떤 방식으로 로그인 할지 정의: 나의 경우 사내 인증 시스템이므로 custom provider를 정의
-    { 
+  debug: true,  // 개발 중 콘솔에 로그 출력 하도록
+  providers: [  // 어떤 방식으로 로그인 할지 정의: 나의 경우 사내 인증 시스템이므로 custom provider를 정의
+    {
       id: 'testid',  // 인증 방식 이름 정의: 코드에서 signIn('testid')로 사용함
-      name: 'SignIn With AuthX',  // 사용자에게 보여질 로그인 버튼의 이름
-      type: 'oauth', // 다른 서비스를 통해서 로그인하겠다는 의미
-      clientId: process.env.AUTH_CLIENT_ID,  // 인증 서비스에서 발급 받은 앱ID로 공개된 정보
+      name: '인증 서비스로 로그인하기',  // 사용자에게 보여질 로그인 버튼의 이름
+      type: 'oauth',
+      clientId: process.env.AUTH_CLIENT_ID,  // 인증 서비스에서 발급 받은 앱ID(공개된 정보)
       // cliendSecret은 인증 서버에서 발급 받은 비밀키로 보안정보를 넣는데 나의 경우 인증 방식이 PKCE라서 안보냄
-      issuer: 'OpenID Connect 인증 서버 URL' // 인증 서버의 기본 URL 주소로 구글 이라면: https://accounts.google.com
+      issuer: '[OpenID Connect 인증 서버 URL]', // 인증 서버의 기본 URL 주소로 구글 이라면: https://accounts.google.com
       authorization: {
-        url: 'https://api.cadiacinsight.com/v1/authorize',
+        url: '[인증 서버 URL]/v1/authorize',  // 사용자가 로그인할 실제 페이지 주소
         params: {
-          scope: 'openid',
-          response_type: 'code',
+          scope: 'openid',  // 기본 사용자 정보(이름, 이메일 등)를 요청
+          response_type: 'code',  // 보안상 안전한 인증 코드 방식 사용
         },
       },
-      token: {
-        url: 'https://api.cadiacinsight.com/v1/token',
-        params: {
-          grant_type: 'authorization_code',
-        },
-      },
-      userinfo: 'https://api.cadiacinsight.com/v1/userinfo',
-      checks: ['pkce', 'state'],
-      idToken: false,
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-        };
-      },
-    } as OAuthConfig<any>,
-  ],
-  session: {
-    strategy: 'jwt',
+    token: '[인증 서버 URL]/v1/token',  // 인증 코드를 실제 토큰으로 바꿔주는 API 주소
+    userinfo: '[인증 서버 URL]/v1/userinfo',  // 토큰으로 사용자 정보를 가져오는 API 주소
+    checks: ['pkce', 'state', 'nonce'],  // 보안 검증 추가. pkce(코드 가로채기 방지), state(가짜 로그인 방지), nonce(토큰 재사용 공격 방지) 
+    idToken: true,   // ID 토큰을 사용하겠다 (사용자 정보 포함)
+    client: {
+      token_endpoint_auth_method: 'none',  // 토큰 요청할 때 client secret 사용하지 않음: PKCE를 사용해서 없어도 안전함
+    },
+    profile(profile) {  // 인증 서비스에서 받은 사용자 정보를 웹에서 쓸 형식으로 변환
+      return {
+        id: profile.sub,
+        name: profile.name,
+        email: profile.email,
+        image: profile.picture,
+      };
+    },
+  session: { 
+    strategy: 'jwt',  // jwt 토큰으로 로그인 상태를 관리함
   },
-  callbacks: {
-    async signIn({ user, account, profile, email, credentials }) {
-      console.log('signIn callback:', { user, account, profile, email, credentials });
-      return true;
-    },
-    async jwt({ token, account, profile, user }) {
-      console.log('jwt callback:', { token, account, profile, user });
-      if (account) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-      }
-      if (profile) {
-        token.sub = profile.sub;
-        token.name = profile.name;
-        token.email = profile.email;
-        token.picture = profile.picture;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      console.log('session callback:', { session, token });
-      if (token) {
-        session.user = {
-          name: token.name,
-          email: token.email,
-          image: token.picture,
-        };
-      }
-      return session;
-    },
+  async jwt({ token, account, profile, user }) { // 인증 서비스에서 받은 ID 토큰을 해독해서 사용자 정보를 추출, 로그인 성공 직후, 페이지 새로고침할 때마다 실행
+    ....
+    return token; // 실무에선 jwtDecode 사용해서 디코딩 후 리턴
   },
-  events: {
-    async signIn(message) {
-      console.log('signIn event:', message);
-    },
-    async signOut(message) {
-      console.log('signOut event:', message);
-    },
-    async createUser(message) {
-      console.log('createUser event:', message);
-    },
-    async updateUser(message) {
-      console.log('updateUser event:', message);
-    },
-    async linkAccount(message) {
-      console.log('linkAccount event:', message);
-    },
-    async session(message) {
-      console.log('session event:', message);
-    },
+  async signIn({ user, account, email, credentials }) { // 사용자가 로그인을 시도할 때 실행됨. 로그인을 허용할지 말지 결정(true: 허용, false: 거부)
+    // 사용자 검증 로직 추가 가능
+    return true;
   },
-  pages: {
-    signIn: '/login',
-  },
-};
+  async session({ session, token }) {
+    // 프론트에서 useSession() 호출할 때마다 실행. JWT 토큰의 정보를 세션 객체로 변환
+    if (token) {
+      session.user = {
+        ....
+      };
+    }
+  return session; // 이 정보가 useSession().data.user
+},
+// 이걸 살려두면 로그인 시도 시 프론트의 /login 사용, 주석처리 시 인증서비스에서 제공되는 로그인 페이지 사용
+// pages: { 
+//   signIn: '/login',
+// },
+- 주석 처리되어 있어서 NextAuth 기본 로그인 페이지 사용
+- 주석 해제하면 `/login` 페이지로 사용자 정의 로그인 페이지 사용
 
 const handler = NextAuth(authOptions);
 
+// /api/auth/[...nextauth] 경로로 오는 모든 인증 요청 처리
 export { handler as GET, handler as POST };
 ```
+## 전체 로그인 흐름
+
+1. `사용자`: "로그인" 버튼 클릭 → `signIn('testid')` 호출
+2. `NextAuth`: Healthcare Platform 로그인 페이지로 리다이렉트
+3. `인증 서비스`: 사용자 인증 후 인증 코드 반환
+4. `NextAuth`: 인증 코드를 토큰으로 교환
+5. `JWT 콜백`: ID 토큰 해독해서 사용자 정보 추출
+6. `SignIn 콜백`: 로그인 허용 여부 결정
+7. `프론트엔드`: `useSession()`으로 로그인 상태 및 사용자 정보 접근
 
 
 *참고*
