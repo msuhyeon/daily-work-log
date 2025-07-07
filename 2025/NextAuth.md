@@ -200,11 +200,6 @@ export { handler as GET, handler as POST };
 7. `프론트엔드`: `useSession()`으로 로그인 상태 및 사용자 정보 접근
 
 ### 로그인 적용
-- 사용자가 "/" 접근 시 서버 컴포넌트에서 `/api/auth/signin/testid`로 리다이렉트 해야하는 경우
-- NextAuth가 자동으로 생성하는 OAuth 로그인 엔드포인트를 넣어줌
-- 서버 컴포넌트로 유지되어 SSR 성능상 최적화를 할 수 있고
-- NextAuth의 표준 OAuth 플로우를 사용하게된다.
-
 ```tsx
 import { redirect } from 'next/navigation';
 
@@ -212,7 +207,12 @@ export default function HomePage() {
   redirect('/api/auth/signin/testid');
 }
 ```
-
+- 사용자가 "/" 접근 시 서버 컴포넌트에서 `/api/auth/signin/testid`로 리다이렉트 해야하는 경우
+- NextAuth가 자동으로 생성하는 OAuth 로그인 엔드포인트를 넣어줌
+  - `/api/auth/signin/testid`는 NextAuth에서 자동으로 제공하는 API 라우트 이지만
+  - NextAuth가 내부적으로 이 경로에 로그인 페이지로 리다이렉트하는 처리를 해두었기 때문에 렌더링됨
+- 서버 컴포넌트로 유지되어 SSR 성능상 최적화를 할 수 있고
+- NextAuth의 표준 OAuth 플로우를 사용하게됨
 
 *참고*
 - [NextAuth.js 공식 문서](https://next-auth.js.org/)
