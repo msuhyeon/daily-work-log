@@ -243,8 +243,7 @@ export default function HomePage() {
 *하지만 위의 코드는 문제가 있다.*
 - 로그인을 한 유저, 안한 유저 모두 루트 페이지에 접근하면 로그인 페이지로 빠진다.
 - 그래서 세션 상태에 따라 로직 처리가 필요하다.
-- `app/page.tsx`는 루트 페이지이므로 상황에 위해 서버 컴포넌트로 유저의 여부에 세션 갖들을 수 있을까?
-- 아래의 코드를 참고하면 된다.
+- `app/page.tsx`는 어떻게 서버 컴포넌트를 유지하며 세션 값을 알 수 있을까?
 
 ```tsx
 // app/page.tsx
@@ -259,8 +258,10 @@ async function ServerComponent() {
  
  return <p>Hello {session.user.name}!</p>;
 }
-
-- `getServerSession`: 서버에서 즉시 세션 정보를 가져와서 로딩 없이 바로 보호된 컨텐츠를 렌더링 할 수 있게 해주는 NextAuth의 함수이다.
+```
+### `getServerSession`
+- 서버에서 즉시 세션 정보를 가져와서 로딩 없이 바로 보호된 컨텐츠를 렌더링 할 수 있게 해주는 NextAuth의 함수이다.
+- 성능 최적화를 위해선 세션 캐싱도 제공한다 `getCachedSession()`
 
 *참고*
 - [NextAuth.js 공식 문서](https://next-auth.js.org/)
