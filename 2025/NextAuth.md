@@ -134,13 +134,16 @@ const authOptions: NextAuthOptions = {
       type: 'oauth',
       clientId: process.env.AUTH_CLIENT_ID,  // 인증 서비스에서 발급 받은 앱ID(공개된 정보)
       // cliendSecret은 인증 서버에서 발급 받은 비밀키로 보안정보를 넣는데 나의 경우 인증 방식이 PKCE라서 안보냄
+      wellKnown:
+        'https://api.cadiacinsight.com/.well-known/openid-configuration',
       issuer: '[OpenID Connect 인증 서버 URL]', // 인증 서버의 기본 URL 주소로 구글 이라면: https://accounts.google.com
-      authorization: {
-        url: '[인증 서버 URL]/v1/authorize',  // 사용자가 로그인할 실제 페이지 주소
-        params: {
-          scope: 'openid',  // 기본 사용자 정보(이름, 이메일 등)를 요청
-          response_type: 'code',  // 보안상 안전한 인증 코드 방식 사용
-        },
+      // 이슈로 인해 주석처리
+      // authorization: {
+      //  url: '[인증 서버 URL]/v1/authorize',  // 사용자가 로그인할 실제 페이지 주소
+      //  params: {
+      //    scope: 'openid',  // 기본 사용자 정보(이름, 이메일 등)를 요청
+      //    response_type: 'code',  // 보안상 안전한 인증 코드 방식 사용
+      //  },
       },
     token: '[인증 서버 URL]/v1/token',  // 인증 코드를 실제 토큰으로 바꿔주는 API 주소
     userinfo: '[인증 서버 URL]/v1/userinfo',  // 토큰으로 사용자 정보를 가져오는 API 주소
@@ -189,6 +192,29 @@ const handler = NextAuth(authOptions);
 // /api/auth/[...nextauth] 경로로 오는 모든 인증 요청 처리
 export { handler as GET, handler as POST };
 ```
+
+#### ERROR 발생
+```text
+https://next-auth.js.org/errors#oauth_callback_error jwks_uri must be configured on the issuer {
+  error: [Error [OAuthCallbackError]: jwks_uri must be configured on the issuer] {
+    code: undefined
+  },
+  providerId: 'testid',
+  message: 'jwks_uri must be configured on the issuer'
+}
+```
+- 내가 설정한 OpenID Connect Provider에 `jwks_uri` 값이 누락되거나 유효하지 않아서 NextAuth가 에러를 발생시킴
+- `jwks_uri`:
+  - JSON Web Key Set (JWKs)을 제공하는 URL 
+  - 인증 서버가 본인의 공개키를 브라우저나 클라이언트에게 제공하기 위한 주소
+  - 이 키를 이용해 `id_token`이나 `access_token`의 서명을 검증할 수 있어야하기 때문에 반드시 있어야하는 값이다.
+
+#### 해결 방법
+- 설정에 `wellknown`이 있으면 NextAuth가 알아서 `.well-known/openid-configuration`을 파싱해서 필요한 값(jwks_uri, authorization_endpoint, 등)을 자동으로 가져감
+- 그런데 내가 설정한 것 처럼 `authorization, token, userinfo`를 수동으로 지정했을 경우 `jwks_uri`도 직접 명시하거나 `wellKnown`에서 자동 추출되길 기대함
+- 결론: `wellKnown` 설정만 추가한 나머지는 제거한다. (**가장 안전하고 권장되는 방식**)
+
+
 ## 전체 로그인 흐름
 
 1. `사용자`: "로그인" 버튼 클릭 → `signIn('testid')` 호출
