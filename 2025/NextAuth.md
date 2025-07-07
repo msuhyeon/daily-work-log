@@ -240,6 +240,28 @@ export default function HomePage() {
 - 서버 컴포넌트로 유지되어 SSR 성능상 최적화를 할 수 있고
 - NextAuth의 표준 OAuth 플로우를 사용하게됨
 
+*하지만 위의 코드는 문제가 있다.*
+- 로그인을 한 유저, 안한 유저 모두 루트 페이지에 접근하면 로그인 페이지로 빠진다.
+- 그래서 세션 상태에 따라 로직 처리가 필요하다.
+- `app/page.tsx`는 루트 페이지이므로 상황에 위해 서버 컴포넌트로 유저의 여부에 세션 갖들을 수 있을까?
+- 아래의 코드를 참고하면 된다.
+
+```tsx
+// app/page.tsx
+
+import { getServerSession } from 'next-auth';
+import { authOptions } from './api/auth/[...nextauth]/route';
+
+async function ServerComponent() {
+ const session = await getServerSession(authOptions);
+ 
+ if (!session) return <p>Not logged in</p>;
+ 
+ return <p>Hello {session.user.name}!</p>;
+}
+
+- `getServerSession`: 서버에서 즉시 세션 정보를 가져와서 로딩 없이 바로 보호된 컨텐츠를 렌더링 할 수 있게 해주는 NextAuth의 함수이다.
+
 *참고*
 - [NextAuth.js 공식 문서](https://next-auth.js.org/)
 - [OAuth 2.0 RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749)
