@@ -259,9 +259,19 @@ async function ServerComponent() {
  return <p>Hello {session.user.name}!</p>;
 }
 ```
-### `getServerSession`
-- 서버에서 즉시 세션 정보를 가져와서 로딩 없이 바로 보호된 컨텐츠를 렌더링 할 수 있게 해주는 NextAuth의 함수이다.
+
+### getServerSession
+- 서버에서 즉시 세션 정보를 가져와서 로딩 없이 바로 보호된 컨텐츠를 렌더링 할 수 있게 해주는 NextAuth 함수 👉 `Server Component`에서 사용
 - 성능 최적화를 위해선 세션 캐싱도 제공한다 `getCachedSession()`
+
+### useSession
+- NextAuth.js에서 제공하는 React Hook 👉 `Client Component`에서 사용
+- 현재 세션 상태를 관리하고 인증 정보에 접근할 수 있도록 함
+- 내부적으로 Context API와 SWR을 사용해서 세션 데이터를 캐싱하고 동기화 
+
+<br/>
+<br/>
+<br/>
 
 *참고*
 - [NextAuth.js 공식 문서](https://next-auth.js.org/)
