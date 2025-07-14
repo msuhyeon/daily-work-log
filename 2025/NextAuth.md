@@ -277,3 +277,29 @@ async function ServerComponent() {
 - [NextAuth.js 공식 문서](https://next-auth.js.org/)
 - [OAuth 2.0 RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749)
 - [OpenID Connect 1.0 Specification](https://openid.net/connect/)
+
+
+
+
+----
+
+
+로그인 페이지에 회원가입 기능이 붙게되었는데, 각각의 서비스 마다 회원가입을 해야하는 구조여서 프론트엔드에도 수정이 필요해졌다.
+> 기존에는 인증 서비스에서 제공하는 로그인 UI를 사용했는데, 프론트엔드에서 custom 한 로그인 UI를 쓰도록 변경되었다. <br/>
+> 그에 따라 nextAuth의 route 설정 수정이 필요해졌다.
+
+
+#### 수정하려는 방향
+1. client가 /authorize 호출
+2. 서버가 세션을 확인하고 로그인 내역이 없으면 클라이언트의 /login 페이지로 리다이렉트
+3. 클라이언트가 리다이렉트된 /login 페이지에서 사용자 ID/PW 입력 후 서버의 로그인 API 를 호출하여 form submit
+4. 서버는 ID/PW 확인 후 로그인 성공 시 원본 /authorize에 code값을 붙여서 클라이언트 callback uri로 리다이렉트
+5. 클라이언트는 리다이렉트 uri로 부터 code 추출하여 서버의 /token 호출
+
+
+간단하게 말하면
+- app이 렌더링될 때 인증 여부를 검사해야하니 `signIn()`를 호출한다: **OAuth 플로우가 시작**됨
+- 로그인 페이지에서 로그인 버튼 클릭 시 `signIn()`를 호출 하는게 아니라 인증 서버의 API를 호출하고 받은 응답에 따라 프론트에서 리다이렉트해준다
+
+
+
