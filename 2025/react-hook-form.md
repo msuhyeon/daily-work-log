@@ -1,23 +1,88 @@
 > A component is changing an uncontrolled input to be controlled. This is likely caused by the value changing from undefined to a defined value, which should not happen. Decide between using a controlled or uncontrolled input element for the lifetime of the component. More info: https://react.dev/link/controlled-components 
 
-개발 중 위 에러가 발생하여 해결하는 과정에서 `react-hook-form`의 개념을 한번 정리하면 좋겠다 싶어 정리해본다 🔥🔥
-
+이 에러를 해결하면서 react-hook-form의 개념을 정리해보았다 🔥
 
 # react-hook-form
-리액트에서 form 처리를 쉽게 해주는 라이브러리
+React에서 폼 처리를 효율적이고 간편하게 해주는 라이브러리로 전통적인 controlled component 방식의 한계를 극복하고, 성능과 개발자 경험을 크게 개선한다.
 
 ### 사용하는 이유
-1. `코드가 짧아짐`: **useState**로 입력값 하나하나 만들지 않아도됨 
-3. `성능 좋음`: 입력할 때 마다 리렌더링 덜 일어남 (useRef 사용하니)
-4. `유효성 검사 편리함`: ex) 이메일 형식 체크, 필수 입력 등 쉽게 설정 가능
-5. `리액트 생태계랑 호환`: Zod, Yup 같은 스키마 검증 라이브러리랑 붙여서 더 세밀하게 검증 가능
+1. `코드가 짧아짐`: **useState**로 입력값 하나하나 만들지 않아도됨
+    - ```jsx
+        // 기존 방식 (useState 사용) - 입력 필드가 많으면 그만큼 state도 늘어남
+        const [email, setEmail] = useState('');
+        const [password, setPassword] = useState('');
+        const [name, setName] = useState('');
+        
+        // react-hook-form 사용 - register 함수가 input 요소를 react-hook-form에 등록하게됨
+        const { register, handleSubmit } = useForm();
+
+        <input {...register("email")} /> // 필요한 props들을 자동으로 input에 전달함
+        // 위 코드는 아래처럼 변환된다.
+        <input 
+          name="email"
+          ref={폼라이브러리가관리하는ref}
+          onChange={폼라이브러리의onChange핸들러}
+        />
+      ```
+2. `성능 최적화`: 입력할 때 마다 리렌더링 덜 일어남
+    - **uncontrolled component** 방식
+    - **useRef**를 내부적으로 사용하여 DOM을 직접 참조함 
+3. `유효성 검사 편리함`: ex) 이메일 형식 체크, 필수 입력 등 쉽게 설정 가능
+    - ```jsx
+      const { register } = useForm();
+
+      <input 
+        {...register("email", { 
+          required: "이메일은 필수입니다",
+          pattern: {
+            value: /^\S+@\S+$/i,
+            message: "올바른 이메일 형식이 아닙니다"
+          }
+        })} 
+      />
+      ```
+4. `리액트 생태계랑 호환`: Zod, Yup 같은 스키마 검증 라이브러리랑 붙여서 더 세밀하게 검증 가능
+   - ts를 지원하여 타입 안정성을 보장
+   - 다양한 UI라이브러리와 호환됨 
 
 
 그럼 다시 에러로 돌아가서 어떤 에러인지 파악해보자.
 - 에러의 핵심은 "A component is **changing an uncontrolled input to be controlled**."
 - 쉽게 말하면 처음 렌더링때는 value가 undfined 또는 아예 없어서 uncontrolled 였는데, 나중에 value가 들어가서 controlled로 바뀌어서 발생한 것
+- 초기 렌더링: value가 undefined 또는 설정이 안되어서 `unControlled`
+- 상태 업뎃 후: value가 정의된 값으로 변경됨 `controlled`
+- 문제가 되는 코드 예시
+    ```jsx
+    const [user, setUser] = useState(); // undefined로 초기화되어
+    
+    return (
+      <input 
+        value={user?.name} // 처음엔 undefined, 나중에 문자열이 됨
+        onChange={(e) => setUser({...user, name: e.target.value})}
+      />
+    );
 
+    // 해결 방법 1. 초기값을 명시적으로 설정
+    const [user, setUser] = useState({ name: '' }); // 빈 문자열로 초기화
 
+    // 해결 방법 2. React Hook Form 사용하여 디폴트 값 설정
+    const { register, handleSubmit, formState: { errors } } = useForm({
+      defaultValues: {
+        name: '', // 기본값 설정
+        email: ''
+      }
+    });
+    
+    return (
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <input {...register("name", { required: true })} />
+        <input {...register("email", { required: true })} />
+      </form>
+    );
+
+    ```
+
+<!-- 
 ### Zod를 쓰는 이유
 1. 검증 로직을 한 곳에 모아두기 위함
     - **register** 안에 조건을 넣으면, 필드가 많아질수록 코드가 지저분해짐
@@ -49,3 +114,4 @@
       path: ["confirmPassword"],
     });
     ```
+-->
