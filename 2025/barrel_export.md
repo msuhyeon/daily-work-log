@@ -4,7 +4,7 @@
 - 마치 배럴에서 물건을 꺼내듯이 하나의 진입점에서 여러 모듈에 접근할 수 있게 해줌
 
 ### 구조
-- ```text
+```text
     src/
       components/
         Button/
@@ -16,10 +16,10 @@
           Input.types.ts
           index.ts          
         index.ts            // 메인 배럴 파일
-  ```
+```
 
 ### 사용
-```text
+```ts
 // components/Button/index.ts
 export { Button } from './Button';
 export type { ButtonProps } from './Button.types';
