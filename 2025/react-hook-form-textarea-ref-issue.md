@@ -16,7 +16,7 @@
 `ref`를 사용해야 하는 상황(예: React Hook Form의 `register`)에서는,  
 컴포넌트 내부에서 **`React.forwardRef`로 ref를 받아서 DOM에 연결**해 주어야 한다.
 
-**문제 코드 (ref 전달 불가)**
+#### 문제 코드 (ref 전달 불가)
 ```tsx
 // components/ui/textarea.tsx
 import React from "react";
@@ -26,7 +26,7 @@ return <textarea {...props} />;
 }
 ```
 
-**수정 된 코드 (ref전달 가능)**
+#### 수정 된 코드 (ref전달 가능)
 ```tsx
 // components/ui/textarea.tsx
 import * as React from "react";
@@ -51,3 +51,42 @@ Textarea.displayName = "Textarea";
 
 export { Textarea };
 ```
+
+
+#### React Hook Form 사용 예시
+```tsx
+import { useForm, Controller } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
+
+export function MyForm() {
+  const { control, handleSubmit } = useForm({
+    defaultValues: { message: "" },
+  });
+
+  const onSubmit = (data) => {
+    console.log(data);
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <Controller
+        name="message"
+        control={control}
+        render={({ field }) => (
+          <Textarea
+            {...field}
+            className="h-32 resize-none overflow-y-auto"
+            rows={5}
+          />
+        )}
+      />
+      <button type="submit">전송</button>
+    </form>
+  );
+}
+```
+
+#### 결론
+- 문제: 일반 함수형 컴포넌트는 ref를 직접 받을 수 없음
+- 원인: React Hook Form의 field에는 ref가 포함되지만, 컴포넌트에서 DOM으로 전달되지 않음
+- 해결: React.forwardRef로 감싸고, DOM 요소에 ref를 연결
