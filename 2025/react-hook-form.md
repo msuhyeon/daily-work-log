@@ -115,3 +115,79 @@ React에서 폼 처리를 효율적이고 간편하게 해주는 라이브러리
     });
     ```
 -->
+
+
+# React Hook Form의 watch()
+
+## 개념
+폼 필드의 값을 **실시간으로 관찰**하는 메서드로 값이 변경될 때마다 컴포넌트 리렌더링 발생됨
+
+## 기본 사용법
+
+```js
+const { watch } = useForm();
+
+// 전체 폼 값
+const allValues = watch();
+
+// 특정 필드
+const name = watch('name');
+
+// 여러 필드
+const [name, email] = watch(['name', 'email']);
+```
+
+## 콜백 방식 (성능 최적화)
+
+```js
+useEffect(() => {
+  const subscription = watch((value, { name, type }) => {
+    console.log('변경된 필드:', name, value);
+    // 비즈니스 로직 처리
+  });
+  
+  return () => subscription.unsubscribe();
+}, [watch]);
+```
+
+## 실무 활용
+
+### 조건부 렌더링
+```js
+const showAddress = watch('needAddress');
+
+return (
+  <>
+    <input type="checkbox" {...register('needAddress')} />
+    {showAddress && (
+      <input {...register('address')} placeholder="주소" />
+    )}
+  </>
+);
+```
+
+### 실시간 계산
+```js
+const [price, quantity] = watch(['price', 'quantity']);
+const total = (price || 0) * (quantity || 0);
+
+return <div>총액: {total}원</div>;
+```
+
+### 값 동기화
+```js
+const password = watch('password');
+
+<input 
+  {...register('confirmPassword', {
+    validate: value => value === password || '비밀번호가 일치하지 않습니다'
+  })}
+/>
+```
+
+#### 정리
+- 값 변경마다 리렌더링 발생되므로 꼭 필요한 경우가 아니면 콜백 방식 사용
+- 조건부 필드 표시  
+- 실시간 계산/미리보기  
+- 필드 간 값 검증  
+- 단순 상태 표시의 경우 사용하지않음 (불필요한 리렌더링)
