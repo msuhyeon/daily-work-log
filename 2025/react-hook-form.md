@@ -118,12 +118,8 @@ React에서 폼 처리를 효율적이고 간편하게 해주는 라이브러리
 
 
 # React Hook Form의 watch()
-
-## 개념
 - 폼 필드의 값을 **실시간으로 관찰**하는 메서드로 값이 변경될 때마다 컴포넌트 리렌더링 발생됨
 - 나의 경우 Select box로 `특정 값`을 선택할 경우 Select box를 한번 더 화면에 리렌더링 할 시 사용함
-
-## 기본 사용법
 
 ```js
 const { watch } = useForm();
@@ -138,7 +134,7 @@ const name = watch('name');
 const [name, email] = watch(['name', 'email']);
 ```
 
-## 콜백 방식 (성능 최적화)
+### 콜백 방식 (성능 최적화)
 
 ```js
 useEffect(() => {
