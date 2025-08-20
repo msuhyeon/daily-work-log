@@ -186,3 +186,40 @@ const password = watch('password');
 - 실시간 계산/미리보기  
 - 필드 간 값 검증  
 - 단순 상태 표시의 경우 사용하지않음 (불필요한 리렌더링)
+
+
+## form.watch() 
+- 값을 일시적으로 확인할 때 사용
+ - onSubmit 전에 현재 값 확인
+ - 버튼 클릭 이벤트 안에서 값 참조
+ - 디버깅용
+- 성능 이슈가 없거나 UI 리렌더가 필요없는 곳에서 간단히 사용함
+
+```tsx
+const onSubmit = (data) => {
+  const type = form.watch("user_group_type");
+  console.log("현재 타입:", type);
+};
+```
+
+## useWatch
+- UI를 값 변화에 따라 자동으로 갱신해야할 때 사용
+    - 특정 필드 값이 변하면 다른 컴포넌트 표시/숨김
+    - 선택값에 따라 다른 입력창 보여줌
+    - 상태 관리 대체(useState를 쓰지 않아도 됨)
+- 성능을 고려했을때 권장함 (필드 단위로 리렌더링)
+```tsx
+const userGroupType = useWatch({ control: form.control, name: "user_group_type" });
+
+return (
+  <>
+    <Select ... />
+    {userGroupType === "hospital" && <HospitalForm />}
+    {userGroupType === "center" && <CenterForm />}
+  </>
+);
+```
+
+- 두 값 모두 React-Hook-Form 필드 값의 변화를 감지하지만 `form.watch`는 단순 조회, `useWatch`는 리렌더링을 구독함
+- 단발성으로 확인하는 경우엔 `form.watch`를 사용하고 UI 반응/리렌더링이 필요한 경우에는 `useWatch`를 사용하는걸 권장함
+
